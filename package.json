@@ -1,0 +1,20 @@
+{
+  "author": "Paul Vorbach <paul@vorb.de> (http://vorb.de)",
+  "name": "cmts",
+  "description": "A RESTful comment server",
+  "tags": [ "comment", "discussion", "REST" ],
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/pvorb/node-cmts.git"
+  },
+  "bugs": {
+    "web": "https://github.com/pvorb/node-cmts/issues"
+  },
+  "main": "cmts.js",
+  "engines": {
+    "node": "*"
+  },
+  "dependencies": {
+  }
+}
