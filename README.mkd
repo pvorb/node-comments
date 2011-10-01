@@ -136,6 +136,6 @@ This package is licensed under the
 
 [mongodb-doc-indexes]:https://github.com/christkv/node-mongodb-native/blob/master/docs/indexes.md
 [mongodb-doc-queries]:https://github.com/christkv/node-mongodb-native/blob/master/docs/queries.md
-[test-dir]:https://github.com/pvorb/node-comments/test
+[test-dir]:https://github.com/pvorb/node-comments/tree/master/test
 [issues]:https://github.com/pvorb/node-comments/issues
 [license]:http://vorb.de/license/mit.html
