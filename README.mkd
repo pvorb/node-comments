@@ -30,6 +30,8 @@ Creates a new Comments object. This means, a connection to MongoDB is set up.
     For more information on how to define `opt.index` look at
     [the MongoDB documentation][mongodb-doc-indexes].
 
+~~~
+
 ```javascript
 comments.saveComment(comment, saved)
 ```
@@ -45,6 +47,8 @@ is a comment with the same `_id` property. If `comment` does not define an
     `error` is an `Error` object, when an error occurred, otherwise it is
     `null`. `comment` is either the saved comment object or `1` if an existing
     comment has been updated.
+
+~~~
 
 ```javascript
 comments.getComments(doc, [[properties,] options,] received)
@@ -85,6 +89,8 @@ Gives access to the comments of a document.
     otherwise it is `null`. `results` is a cursor to the result set of the
     query. Look at [section "Cursors"][mongodb-doc-queries] for more
     information on how to use them.
+
+~~~
 
 ```javascript
 comments.count(doc, counted)
