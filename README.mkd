@@ -1,1 +1,135 @@
-**cmts** is a RESTful comment server.
+# Comments
+
+**Commments** is an abstraction layer for MongoDB that allows for easily
+providing some commenting functionality.
+
+## Usage
+
+```javascript
+new Comments(options)
+```
+
+Creates a new Comments object. This means, a connection to MongoDB is set up.
+
+*   `options` is an object that defines some DB connection parameters.
+
+    The default options are as follows:
+
+    ```javascript
+    {
+      host: 'localhost',      // - hostname of the server where mongodb is
+                              //   running
+      port: 27017,            // - port that is used by mongodb
+      name: 'website',        // - name of the mongodb database
+      collection: 'comments', // - name of the collection that contains the
+                              //   comments
+      index: 'doc'            // - fields to be indexed
+    }
+    ```
+
+    For more information on how to define `opt.index` look at
+    [the MongoDB documentation][mongodb-doc-indexes].
+
+```javascript
+comments.saveComment(comment, saved)
+```
+
+Adds a new or updates a comment in the collection depending on if there already
+is a comment with the same `_id` property. If `comment` does not define an
+`_id` property, a new comment is created.
+
+*   `comment` is an object that defines a comment. It is stored directly into
+    the collection. Any prior parsing is up to you. `comment.doc` should be
+    defined for the later use of `comments.getComments`.
+*   `saved` is a callback function that takes two arguments `(error, comment)`.
+    `error` is an `Error` object, when an error occurred, otherwise it is
+    `null`. `comment` is either the saved comment object or `1` if an existing
+    comment has been updated.
+
+```javascript
+comments.getComments(doc, [[properties,] options,] received)
+```
+
+Gives access to the comments of a document.
+
+*   `doc` is a string defining the document that contains the comments that you
+    are looking for. If `doc` is `null`, all comments in the collection will be
+    found.
+*   `properties [optional]` is an object that defines, which properties of the
+    comments shall be returned.
+
+    The default properties are as follows:
+
+    ```javascript
+    {
+      _id: true,
+      author: true,
+      website: true,
+      created: true,
+      message: true
+    }
+    ```
+*   `options [optional]` is an object that defines additional options according
+    to [section "Query options"][mongodb-doc-queries] like _sorting_ or
+    _paging_.
+
+    The default options are as follows:
+
+    ```javascript
+    {
+      sort: "created" // sort results by date of creation in ascending order
+    }
+    ```
+*   `received` is a callback function that takes two arguments
+    `(error, results)`. `error` is an `Error` object, when an error occurred,
+    otherwise it is `null`. `results` is a cursor to the result set of the
+    query. Look at [section "Cursors"][mongodb-doc-queries] for more
+    information on how to use them.
+
+```javascript
+comments.count(doc, counted)
+```
+
+Counts the comments of a document or the complete collection.
+
+*   `doc` is a string defining the document that contains the comments that you
+    are looking for. If `doc` is `null`, all comments in the collection will be
+    counted.
+*   `counted` is a callback function that takes two arguments `(error, count)`.
+    `error` is an `Error` object, when an error occurred, otherwise it is
+    `null`. `count` is the number of comments for the document or in the
+    collection.
+
+## Installation
+
+You need a running MongoDB before you can use **Comments**. On Debian
+
+```bash
+# apt-get install mongodb
+```
+
+Then install **Comments** with npm.
+
+```bash
+# npm install -g Comments
+```
+
+## Examples
+
+For examples, look at the [tests][test-dir].
+
+## Bugs and Issues
+
+If you encounter any bugs or issues, feel free to open an issue at
+[github][issues].
+
+## License
+
+This package is licensed under the
+[MIT license][license].
+
+[mongodb-doc-indexes]:https://github.com/christkv/node-mongodb-native/blob/master/docs/indexes.md
+[mongodb-doc-queries]:https://github.com/christkv/node-mongodb-native/blob/master/docs/queries.md
+[test-dir]:https://github.com/pvorb/node-comments/test
+[issues]:https://github.com/pvorb/node-comments/issues
+[license]:http://vorb.de/license/mit.html
