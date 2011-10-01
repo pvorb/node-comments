@@ -111,13 +111,13 @@ Counts the comments of a document or the complete collection.
 You need a running MongoDB before you can use **Comments**. On Debian
 
 ```bash
-# apt-get install mongodb
+apt-get install mongodb
 ```
 
 Then install **Comments** with npm.
 
 ```bash
-# npm install -g Comments
+npm install -g Comments
 ```
 
 ## Examples
