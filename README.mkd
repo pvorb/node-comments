@@ -26,9 +26,6 @@ Creates a new Comments object. This means, a connection to MongoDB is set up.
     }
     ```
 
-    For more information on how to define `opt.index` look at
-    [the MongoDB documentation][mongodb-doc-indexes].
-
 ---
 
 ```javascript
