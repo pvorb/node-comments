@@ -1,7 +1,8 @@
 var append = require('append'),
-    mongodb = require('mongodb'),
-    MongoDB = mongodb.Db,
-    MongoServer = mongodb.Server;
+    MongoDB = require('mongodb').Db,
+    MongoServer = require('mongodb').Server;
+
+var INDEX = 'res';
 
 // constructor
 var Comments = module.exports = function(opt) {
@@ -11,8 +12,7 @@ var Comments = module.exports = function(opt) {
     host: 'localhost',
     port: 27017,
     name: 'website',
-    collection: 'comments',
-    index: 'doc'
+    collection: 'comments'
   };
 
   this.opt = append(defaultOpt, opt);
@@ -41,7 +41,7 @@ Comments.prototype.connect = function(connected) {
         // save ref to collection
         inst.collection = col;
 
-        col.ensureIndex(opt.index, function(err, index) {
+        col.ensureIndex(INDEX, function(err, index) {
           if (err) throw err;
 
           connected(null, col);
@@ -81,7 +81,7 @@ Comments.prototype.saveComment = function(comment, saved) {
 };
 
 // method: getComments
-Comments.prototype.getComments = function(doc, props, opt, received) {
+Comments.prototype.getComments = function(res, props, opt, received) {
   var defaultOpt = {
     sort: "created"
   };
@@ -109,8 +109,8 @@ Comments.prototype.getComments = function(doc, props, opt, received) {
   }
 
   var query = {};
-  if (doc !== null)
-    query.doc = doc;
+  if (res !== null)
+    query.res = res;
 
   try {
     // get collection and find comments
@@ -123,9 +123,9 @@ Comments.prototype.getComments = function(doc, props, opt, received) {
 };
 
 // method: count
-Comments.prototype.count = function(doc, counted) {
+Comments.prototype.count = function(res, counted) {
   try {
-    this.getComments(doc, function(err, results) {
+    this.getComments(res, function(err, results) {
       results.count(counted);
     });
   } catch(err) {

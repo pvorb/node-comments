@@ -1,6 +1,6 @@
 # Comments
 
-**Commments** is an abstraction layer for MongoDB that allows for easily
+**Comments** is an abstraction layer for MongoDB that allows for easily
 providing some commenting functionality.
 
 ## Usage
@@ -21,9 +21,8 @@ Creates a new Comments object. This means, a connection to MongoDB is set up.
                               //   running
       port: 27017,            // - port that is used by mongodb
       name: 'website',        // - name of the mongodb database
-      collection: 'comments', // - name of the collection that contains the
+      collection: 'comments'  // - name of the collection that contains the
                               //   comments
-      index: 'doc'            // - fields to be indexed
     }
     ```
 
@@ -41,7 +40,7 @@ is a comment with the same `_id` property. If `comment` does not define an
 `_id` property, a new comment is created.
 
 *   `comment` is an object that defines a comment. It is stored directly into
-    the collection. Any prior parsing is up to you. `comment.doc` should be
+    the collection. Any prior parsing is up to you. `comment.res` should be
     defined for the later use of `comments.getComments`.
 *   `saved` is a callback function that takes two arguments `(error, comment)`.
     `error` is an `Error` object, when an error occurred, otherwise it is
@@ -51,13 +50,13 @@ is a comment with the same `_id` property. If `comment` does not define an
 ---
 
 ```javascript
-comments.getComments(doc, [[properties,] options,] received)
+comments.getComments(res, [[properties,] options,] received)
 ```
 
-Gives access to the comments of a document.
+Gives access to the comments of a resource.
 
-*   `doc` is a string defining the document that contains the comments that you
-    are looking for. If `doc` is `null`, all comments in the collection will be
+*   `res` is a string defining the resource that contains the comments that you
+    are looking for. If `res` is `null`, all comments in the collection will be
     found.
 *   `properties [optional]` is an object that defines, which properties of the
     comments shall be returned.
@@ -93,18 +92,26 @@ Gives access to the comments of a document.
 ---
 
 ```javascript
-comments.count(doc, counted)
+comments.count(res, counted)
 ```
 
-Counts the comments of a document or the complete collection.
+Counts the comments of a resource or the complete collection.
 
-*   `doc` is a string defining the document that contains the comments that you
-    are looking for. If `doc` is `null`, all comments in the collection will be
+*   `res` is a string defining the resource that contains the comments that you
+    are looking for. If `res` is `null`, all comments in the collection will be
     counted.
 *   `counted` is a callback function that takes two arguments `(error, count)`.
     `error` is an `Error` object, when an error occurred, otherwise it is
-    `null`. `count` is the number of comments for the document or in the
+    `null`. `count` is the number of comments for the resource or in the
     collection.
+
+---
+
+```javascript
+comments.close(done)
+```
+
+*   `done` is a callback function that takes *** arguments `(***)`.
 
 ## Installation
 

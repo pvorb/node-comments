@@ -16,7 +16,7 @@ function log(err, comment) {
 }
 
 comments.saveComment({
-  doc: '/path/document',
+  res: '/path/document',
   message: 'this is the text of the comment',
   author: 'paul',
   website: 'https://vorb.de',
