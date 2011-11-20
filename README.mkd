@@ -109,7 +109,59 @@ Counts the comments of a resource or the complete collection.
 comments.close(done)
 ```
 
+Closes the connection to the database.
+
 *   `done` is a callback function that takes *** arguments `(***)`.
+
+---
+
+### Facilities for a JSON-REST API
+
+``` js
+comments.getCommentsJSON(res, resp, received)
+```
+
+Writes a JSON object including the requested comments to a HTTP `ServerResponse`
+object.
+
+*   `res` is a string defining the resource that contains the comments that you
+    are looking for. If `res` is `null`, all comments in the collection will be
+    returned.
+*   `resp` is a [`http.ServerResponse` object][http-server-resp]. (Please refer
+    to the version of Node.js that you are using.)
+*   `received` is a callback function that takes one argument `(error)`. `error`
+    is an `Error` object, when an error occurred, otherwise it is `null`.
+
+---
+
+``` js
+comments.parseCommentJSON(res, req, parsed)
+```
+
+Reads a JSON object from a HTTP `ServerRequest` object.
+
+*   `res` is a string defining the resource where the comment should be saved.
+*   `req` is a [`http.ServerRequest` object][http-server-req]. (Please refer to
+    the version of Node.js that you are using.)
+*   `parsed` is a callback function that takes two arguments `(error, comment)`.
+    `error` is an `Error` object, when an error occurred, otherwise it is
+    `null`. `comment` is the parsed comment object.
+
+---
+
+``` js
+comments.setCommentJSON(res, comment, resp, saved)
+```
+
+Saves or updates a comment for the defined resource and writes the corresponding
+HTTP status code to the given `ServerResponse` object.
+
+*   `res` is a string defining the resource where the comment should be saved.
+*   `comment` is an object that defines a comment.
+*   `resp` is a [`http.ServerResponse` object][http-server-resp]. (Please refer
+    to the version of Node.js that you are using.)
+*   `saved` is a callback function that takes one argument `(error)`. `error` is
+    an `Error` object, when an error occurred, otherwise it is `null`.
 
 ## Installation
 
@@ -136,11 +188,12 @@ If you encounter any bugs or issues, feel free to open an issue at
 
 ## License
 
-This package is licensed under the
-[MIT license][license].
+This package is licensed under a [MIT license][license].
 
 [mongodb-doc-indexes]:https://github.com/christkv/node-mongodb-native/blob/master/docs/indexes.md
 [mongodb-doc-queries]:https://github.com/christkv/node-mongodb-native/blob/master/docs/queries.md
+[http-server-resp]:http://nodejs.org/docs/v0.4.0/api/http.html#http.ServerResponse
+[http-server-req]:http://nodejs.org/docs/v0.4.0/api/http.html#http.ServerRequest
 [test-dir]:https://github.com/pvorb/node-comments/tree/master/test
 [issues]:https://github.com/pvorb/node-comments/issues
 [license]:http://vorb.de/license/mit.html
