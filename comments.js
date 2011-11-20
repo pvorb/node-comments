@@ -221,7 +221,7 @@ Comments.prototype.parseCommentJSON = function parseCommentJSON(res, req,
 // method: setCommentJSON
 Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
     resp, saved) {
-  if (typeof resource == 'undefined') {
+  if (typeof res == 'undefined') {
     resp.writeHead(404);
     resp.end();
     saved(new Error('Invalid argument. `res` must not be undefined.'));
@@ -231,7 +231,7 @@ Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
       resp.end();
       saved(new Error('Precondition failed.'));
     } else {
-      comment.res = resource;
+      comment.res = res;
       comment.created = new Date();
       // hash the comment
       comment.hash = sha1(JSON.stringify(comment));
@@ -242,9 +242,7 @@ Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
           resp.end();
           saved(err);
         } else { // everything ok
-          resp.writeHead(200, {
-            'Content-Type': 'application/json',
-            'Location': resource });
+          resp.writeHead(200, { 'Location': res });
           resp.end();
           saved(null);
         }
