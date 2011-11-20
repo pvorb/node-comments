@@ -1,11 +1,12 @@
 var append = require('append'),
+    sha1 = require('sha1'),
     MongoDB = require('mongodb').Db,
     MongoServer = require('mongodb').Server;
 
-var INDEX = 'res';
+var INDEX = 'res'; // which field to index
 
 // constructor
-var Comments = module.exports = function(opt) {
+var Comments = module.exports = function Comments(opt) {
 
   // Default options
   var defaultOpt = {
@@ -19,7 +20,8 @@ var Comments = module.exports = function(opt) {
 };
 
 // method: connect
-Comments.prototype.connect = function(connected) {
+// only needed for lazy connections
+Comments.prototype.connect = function connect(connected) {
   var inst = this,
       opt = this.opt;
 
@@ -38,12 +40,14 @@ Comments.prototype.connect = function(connected) {
       db.collection(opt.collection, function(err, col) {
         if (err) throw err;
 
-        // save ref to collection
+        // ref to collection
         inst.collection = col;
 
+        // ensure index
         col.ensureIndex(INDEX, function(err, index) {
           if (err) throw err;
 
+          // callback
           connected(null, col);
         });
       });
@@ -54,7 +58,7 @@ Comments.prototype.connect = function(connected) {
 };
 
 // method: getCollection
-Comments.prototype.getCollection = function(done) {
+Comments.prototype.getCollection = function getCollection(done) {
   // If connection hasn't already been established
   if (typeof this.collection == 'undefined')
     // try to connect
@@ -69,7 +73,7 @@ Comments.prototype.getCollection = function(done) {
 };
 
 // method: saveComment
-Comments.prototype.saveComment = function(comment, saved) {
+Comments.prototype.saveComment = function saveComment(comment, saved) {
   try {
     // get collection and save comment
     this.getCollection(function(err, col) {
@@ -81,7 +85,8 @@ Comments.prototype.saveComment = function(comment, saved) {
 };
 
 // method: getComments
-Comments.prototype.getComments = function(res, props, opt, received) {
+Comments.prototype.getComments = function getComments(res, props, opt,
+    received) {
   var defaultOpt = {
     sort: "created"
   };
@@ -123,7 +128,7 @@ Comments.prototype.getComments = function(res, props, opt, received) {
 };
 
 // method: count
-Comments.prototype.count = function(res, counted) {
+Comments.prototype.count = function count(res, counted) {
   try {
     this.getComments(res, function(err, results) {
       results.count(counted);
@@ -137,4 +142,108 @@ Comments.prototype.count = function(res, counted) {
 Comments.prototype.close = function(done) {
   if (this.db)
     this.db.close(done);
+};
+
+// method: getCommentsJSON
+Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
+    callback) {
+  // if resource is not defined
+  if (typeof res == 'undefined') {
+    resp.writeHead(404);
+    resp.end();
+  } else {
+    // request comments for this resource from the db
+    this.getComments(res, function receiveComments(err, results) {
+      if (err) {
+        resp.writeHead(404);
+        resp.end();
+      } else {
+        // count the comments
+        results.count(function count(err, count) {
+          var i = 0;
+
+          if (err) {
+            resp.writeHead(404);
+            resp.end();
+          } else {
+            resp.writeHead(200);
+
+            // start JSON array output
+            resp.write('[');
+
+            // for each comment in the result set
+            results.each(function (err, comment) {
+              if (err) callback(err);
+
+              if (comment) {
+                resp.write(JSON.stringify(comment));
+                // seperate comments by a comma
+                if (++i < count) resp.write(',');
+              } else {
+                // end the output when there are no more comments
+                resp.end(']');
+                callback(null);
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+};
+
+// method: parseCommentJSONRequest
+Comments.prototype.parseCommentJSON = function parseCommentJSON(res, req,
+    callback) {
+  var data = '';
+
+  // add chunks to data
+  request.on('data', function(chunk) {
+    data += chunk;
+  });
+
+  // when data is complete
+  request.on('end', function() {
+    try {
+      callback(null, JSON.parse(data));
+    } catch (err) {
+      callback(err, null);
+    }
+  });
+
+  // when connection is closed, before data is complete
+  request.on('close', function(err) {
+    callback(err, null);
+  });
+};
+
+// method: setCommentJSON
+Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
+    resp, callback) {
+  if (typeof resource == 'undefined') {
+    resp.writeHead(404);
+    resp.end();
+  } else {
+    if (comment === false) {
+      resp.writeHead(412); // precondition failed
+      resp.end();
+    } else {
+      comment.res = resource;
+      comment.created = new Date();
+      // hash the comment
+      comment.hash = sha1(JSON.stringify(comment));
+      // save comment
+      this.saveComment(comment, function(err, comment) {
+        if (err) {
+          resp.writeHead(500);
+          resp.end();
+          callback(err);
+        } else { // everything ok
+          resp.writeHead(200, { 'Location': resource });
+          resp.end();
+          callback(null);
+        }
+      });
+    }
+  }
 };

@@ -1,15 +1,15 @@
 {
   "author": "Paul Vorbach <paul@vorb.de> (https://vorb.de)",
   "name": "Comments",
-  "description": "a wrapper for storing comments in mongodb",
+  "description": "utilities for building a comment server for your website",
   "tags": [ "comment", "discussion", "blog" ],
-  "version": "0.0.0",
+  "version": "0.1.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/pvorb/node-comments.git"
   },
   "bugs": {
-    "web": "https://github.com/pvorb/node-comments/issues"
+    "url": "https://github.com/pvorb/node-comments/issues"
   },
   "main": "comments.js",
   "engines": {
@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "append": ">=0.1.0",
-    "mongodb": ">=0.9.6-19"
+    "sha1": ">=0.0.0",
+    "mongodb": ">=0.9.6"
   }
 }

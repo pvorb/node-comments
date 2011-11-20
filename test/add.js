@@ -1,6 +1,8 @@
 var Comments = require('../');
 
-var comments = new Comments();
+var comments = new Comments({
+  name: 'website'
+});
 
 function log(err, comment) {
   if (err) console.error(err);
@@ -16,7 +18,7 @@ function log(err, comment) {
 }
 
 comments.saveComment({
-  res: '/path/document',
+  res: '/log/2011/09/test.html',
   message: 'this is the text of the comment',
   author: 'paul',
   website: 'https://vorb.de',
