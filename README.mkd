@@ -111,7 +111,7 @@ comments.close(done)
 
 Closes the connection to the database.
 
-*   `done` is a callback function that takes *** arguments `(***)`.
+*   `done` is a callback function.
 
 ---
 
