@@ -145,7 +145,7 @@ Comments.prototype.close = function(done) {
 
 // method: getCommentsJSON
 Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
-    callback) {
+    received) {
   // if resource is not defined
   if (typeof res == 'undefined') {
     resp.writeHead(404);
@@ -156,6 +156,7 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
       if (err) {
         resp.writeHead(404);
         resp.end();
+        received(err);
       } else {
         // count the comments
         results.count(function count(err, count) {
@@ -164,6 +165,7 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
           if (err) {
             resp.writeHead(404);
             resp.end();
+            received(err);
           } else {
             resp.writeHead(200, { 'Content-Type': 'application/json' });
 
@@ -172,7 +174,7 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
 
             // for each comment in the result set
             results.each(function (err, comment) {
-              if (err) callback(err);
+              if (err) received(err);
 
               if (comment) {
                 resp.write(JSON.stringify(comment));
@@ -181,7 +183,7 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
               } else {
                 // end the output when there are no more comments
                 resp.end(']');
-                callback(null);
+                received(null);
               }
             });
           }
@@ -193,7 +195,7 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
 
 // method: parseCommentJSON
 Comments.prototype.parseCommentJSON = function parseCommentJSON(res, req,
-    callback) {
+    parsed) {
   var data = '';
 
   // add chunks to data
@@ -204,28 +206,30 @@ Comments.prototype.parseCommentJSON = function parseCommentJSON(res, req,
   // when data is complete
   request.on('end', function() {
     try {
-      callback(null, JSON.parse(data));
+      parsed(null, JSON.parse(data));
     } catch (err) {
-      callback(err, null);
+      parsed(err, null);
     }
   });
 
   // when connection is closed, before data is complete
   request.on('close', function(err) {
-    callback(err, null);
+    parsed(err, null);
   });
 };
 
 // method: setCommentJSON
 Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
-    resp, callback) {
+    resp, saved) {
   if (typeof resource == 'undefined') {
     resp.writeHead(404);
     resp.end();
+    saved(new Error('Invalid argument. `res` must not be undefined.'));
   } else {
     if (comment === false) {
       resp.writeHead(412); // precondition failed
       resp.end();
+      saved(new Error('Precondition failed.'));
     } else {
       comment.res = resource;
       comment.created = new Date();
@@ -236,13 +240,13 @@ Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
         if (err) {
           resp.writeHead(500);
           resp.end();
-          callback(err);
+          saved(err);
         } else { // everything ok
           resp.writeHead(200, {
             'Content-Type': 'application/json',
             'Location': resource });
           resp.end();
-          callback(null);
+          saved(null);
         }
       });
     }
