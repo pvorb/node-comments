@@ -165,7 +165,7 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
             resp.writeHead(404);
             resp.end();
           } else {
-            resp.writeHead(200);
+            resp.writeHead(200, { 'Content-Type': 'application/json' });
 
             // start JSON array output
             resp.write('[');
@@ -191,7 +191,7 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
   }
 };
 
-// method: parseCommentJSONRequest
+// method: parseCommentJSON
 Comments.prototype.parseCommentJSON = function parseCommentJSON(res, req,
     callback) {
   var data = '';
@@ -238,7 +238,9 @@ Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
           resp.end();
           callback(err);
         } else { // everything ok
-          resp.writeHead(200, { 'Location': resource });
+          resp.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Location': resource });
           resp.end();
           callback(null);
         }
