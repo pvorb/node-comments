@@ -20,7 +20,6 @@ var Comments = module.exports = function Comments(opt) {
 };
 
 // method: connect
-// only needed for lazy connections
 Comments.prototype.connect = function connect(connected) {
   var inst = this,
       opt = this.opt;
@@ -88,7 +87,7 @@ Comments.prototype.saveComment = function saveComment(comment, saved) {
 Comments.prototype.getComments = function getComments(res, props, opt,
     received) {
   var defaultOpt = {
-    sort: "created"
+    sort: 'created'
   };
 
   var defaultProps = {
