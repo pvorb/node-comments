@@ -199,12 +199,12 @@ Comments.prototype.parseCommentJSON = function parseCommentJSON(res, req,
   var data = '';
 
   // add chunks to data
-  request.on('data', function(chunk) {
+  req.on('data', function(chunk) {
     data += chunk;
   });
 
   // when data is complete
-  request.on('end', function() {
+  req.on('end', function() {
     try {
       parsed(null, JSON.parse(data));
     } catch (err) {
@@ -213,7 +213,7 @@ Comments.prototype.parseCommentJSON = function parseCommentJSON(res, req,
   });
 
   // when connection is closed, before data is complete
-  request.on('close', function(err) {
+  req.on('close', function(err) {
     parsed(err, null);
   });
 };
