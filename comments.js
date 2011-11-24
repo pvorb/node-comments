@@ -242,7 +242,7 @@ Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
           resp.end();
           saved(err);
         } else { // everything ok
-          resp.writeHead(200, { 'Location': res });
+          resp.writeHead(200);
           resp.end();
           saved(null);
         }
