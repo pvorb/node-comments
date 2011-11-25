@@ -3,7 +3,7 @@
   "name": "Comments",
   "description": "utilities for building a comment server for your website",
   "tags": [ "comment", "discussion", "blog" ],
-  "version": "0.1.1",
+  "version": "0.2.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/pvorb/node-comments.git"
