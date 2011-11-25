@@ -1,5 +1,6 @@
 var append = require('append'),
     sha1 = require('sha1'),
+    querystring = require('querystring'),
     MongoDB = require('mongodb').Db,
     MongoServer = require('mongodb').Server;
 
@@ -93,6 +94,9 @@ Comments.prototype.getComments = function getComments(res, props, opt,
   var defaultProps = {
     _id: true,
     author: true,
+    email: {
+      hash: true
+    },
     website: true,
     created: true,
     message: true
@@ -193,8 +197,8 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
   }
 };
 
-// method: parseCommentJSON
-Comments.prototype.parseCommentJSON = function parseCommentJSON(res, req,
+// method: parseCommentPOST
+Comments.prototype.parseCommentPOST = function parseCommentPOST(res, req,
     parsed) {
   var data = '';
 
@@ -206,15 +210,15 @@ Comments.prototype.parseCommentJSON = function parseCommentJSON(res, req,
   // when data is complete
   req.on('end', function() {
     try {
-      parsed(null, JSON.parse(data));
+      parsed(null, querystring.parse(data));
     } catch (err) {
-      parsed(err, null);
+      parsed(err);
     }
   });
 
   // when connection is closed, before data is complete
   req.on('close', function(err) {
-    parsed(err, null);
+    parsed(err);
   });
 };
 

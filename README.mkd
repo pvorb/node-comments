@@ -135,10 +135,10 @@ object.
 ---
 
 ``` js
-comments.parseCommentJSON(res, req, parsed)
+comments.parseCommentPOST(res, req, parsed)
 ```
 
-Reads a JSON object from a HTTP `ServerRequest` object.
+Reads a url encoded string from a HTTP `ServerRequest` object.
 
 *   `res` is a string defining the resource where the comment should be saved.
 *   `req` is a [`http.ServerRequest` object][http-server-req]. (Please refer to
