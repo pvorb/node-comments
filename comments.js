@@ -1,5 +1,6 @@
 var append = require('append'),
     sha1 = require('sha1'),
+    md5 = require('MD5'),
     querystring = require('querystring'),
     MongoDB = require('mongodb').Db,
     MongoServer = require('mongodb').Server;
@@ -73,7 +74,23 @@ Comments.prototype.getCollection = function getCollection(done) {
 };
 
 // method: saveComment
-Comments.prototype.saveComment = function saveComment(comment, saved) {
+Comments.prototype.saveComment = function saveComment(res, comment, saved) {
+  // resource
+  comment.res = res;
+
+  // email address and hash
+  var email = comment.email;
+  comment.email = {
+    address: email,
+    hash: md5(email)
+  };
+
+  // edited
+  comment.edited = new Date();
+
+  // hash the comment
+  comment.hash = sha1(JSON.stringify(comment));
+
   try {
     // get collection and save comment
     this.getCollection(function(err, col) {
@@ -94,11 +111,9 @@ Comments.prototype.getComments = function getComments(res, props, opt,
   var defaultProps = {
     _id: true,
     author: true,
-    email: {
-      hash: true
-    },
+    'email.hash': true,
     website: true,
-    created: true,
+    edited: true,
     message: true
   };
 
@@ -235,12 +250,8 @@ Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
       resp.end();
       saved(new Error('Precondition failed.'));
     } else {
-      comment.res = res;
-      comment.created = new Date();
-      // hash the comment
-      comment.hash = sha1(JSON.stringify(comment));
       // save comment
-      this.saveComment(comment, function(err, comment) {
+      this.saveComment(res, comment, function(err, comment) {
         if (err) {
           resp.writeHead(500);
           resp.end();

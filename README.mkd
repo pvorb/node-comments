@@ -29,13 +29,14 @@ Creates a new Comments object. This means, a connection to MongoDB is set up.
 ---
 
 ```javascript
-comments.saveComment(comment, saved)
+comments.saveComment(res, comment, saved)
 ```
 
 Adds a new or updates a comment in the collection depending on if there already
 is a comment with the same `_id` property. If `comment` does not define an
 `_id` property, a new comment is created.
 
+*   `res` is a string defining the resource the comment belongs to.
 *   `comment` is an object that defines a comment. It is stored directly into
     the collection. Any prior parsing is up to you. `comment.res` should be
     defined for the later use of `comments.getComments`.
