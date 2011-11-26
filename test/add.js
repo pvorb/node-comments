@@ -17,8 +17,7 @@ function log(err, comment) {
   });
 }
 
-comments.saveComment({
-  res: '/log/2011/09/test.html',
+comments.saveComment('/log/2011/09/test.html', {
   message: 'this is the text of the comment',
   author: 'paul',
   website: 'https://vorb.de',

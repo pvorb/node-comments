@@ -3,7 +3,7 @@ var Comments = require('../');
 var comments = new Comments();
 
 // list all comments
-comments.getComments('/path/document', function(err, results) {
+comments.getComments('/log/2011/09/test.html', function(err, results) {
   results.each(function(err, comment) {
     if (err) throw err;
 
