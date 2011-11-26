@@ -105,7 +105,7 @@ Comments.prototype.saveComment = function saveComment(res, comment, saved) {
 Comments.prototype.getComments = function getComments(res, props, opt,
     received) {
   var defaultOpt = {
-    sort: 'created'
+    sort: 'edited'
   };
 
   var defaultProps = {
