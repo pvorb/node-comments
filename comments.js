@@ -31,31 +31,30 @@ Comments.prototype.connect = function connect(connected) {
   // DB connection
   var dbConnector = new MongoDB(opt.name, inst.server);
 
-  try {
-    dbConnector.open(function(err, db) {
-      if (err) throw err;
+  dbConnector.open(function(err, db) {
+    if (err)
+      return connected(err);
 
-      // DB connection
-      inst.db = db;
+    // DB connection
+    inst.db = db;
 
-      db.collection(opt.collection, function(err, col) {
-        if (err) throw err;
+    db.collection(opt.collection, function(err, col) {
+      if (err)
+        return connected(err);
 
-        // ref to collection
-        inst.collection = col;
+      // ref to collection
+      inst.collection = col;
 
-        // ensure index
-        col.ensureIndex(INDEX, function(err, index) {
-          if (err) throw err;
+      // ensure index
+      col.ensureIndex(INDEX, function(err, index) {
+        if (err)
+          return connected(err);
 
-          // callback
-          connected(null, col);
-        });
+        // callback
+        connected(null, col);
       });
     });
-  } catch(err) {
-    connected(err);
-  }
+  });
 };
 
 // method: getCollection
@@ -63,11 +62,8 @@ Comments.prototype.getCollection = function getCollection(done) {
   // If connection hasn't already been established
   if (typeof this.collection == 'undefined')
     // try to connect
-    try {
-      this.connect(done);
-    } catch(err) {
-      done(err);
-    }
+    this.connect(done);
+
   // otherwise simply use existing collection
   else
     done(null, this.collection);
@@ -85,27 +81,23 @@ Comments.prototype.saveComment = function saveComment(res, comment, saved) {
     hash: md5(email)
   };
 
-  // edited
-  comment.edited = new Date();
+  // modified
+  comment.modified = new Date();
 
   // hash the comment
   comment.hash = sha1(JSON.stringify(comment));
 
-  try {
-    // get collection and save comment
-    this.getCollection(function(err, col) {
-      col.save(comment, saved);
-    });
-  } catch(err) {
-    saved(err);
-  }
+  // get collection and save comment
+  this.getCollection(function(err, col) {
+    col.save(comment, saved);
+  });
 };
 
 // method: getComments
 Comments.prototype.getComments = function getComments(res, props, opt,
     received) {
   var defaultOpt = {
-    sort: 'edited'
+    sort: 'modified'
   };
 
   var defaultProps = {
@@ -113,7 +105,7 @@ Comments.prototype.getComments = function getComments(res, props, opt,
     author: true,
     'email.hash': true,
     website: true,
-    edited: true,
+    modified: true,
     message: true
   };
 
@@ -135,14 +127,10 @@ Comments.prototype.getComments = function getComments(res, props, opt,
   if (res !== null)
     query.res = res;
 
-  try {
-    // get collection and find comments
-    this.getCollection(function(err, col) {
-      col.find(query, props, opt, received);
-    });
-  } catch(err) {
-    received(err);
-  }
+  // get collection and find comments
+  this.getCollection(function(err, col) {
+    col.find(query, props, opt, received);
+  });
 };
 
 // method: count
@@ -202,7 +190,7 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
               } else {
                 // end the output when there are no more comments
                 resp.end(']');
-                received(null);
+                received();
               }
             });
           }
@@ -224,11 +212,7 @@ Comments.prototype.parseCommentPOST = function parseCommentPOST(res, req,
 
   // when data is complete
   req.on('end', function() {
-    try {
-      parsed(null, querystring.parse(data));
-    } catch (err) {
-      parsed(err);
-    }
+    parsed(null, querystring.parse(data));
   });
 
   // when connection is closed, before data is complete
@@ -259,7 +243,7 @@ Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
         } else { // everything ok
           resp.writeHead(200);
           resp.end();
-          saved(null);
+          saved();
         }
       });
     }
