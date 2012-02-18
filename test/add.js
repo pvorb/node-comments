@@ -1,8 +1,6 @@
 var Comments = require('../');
 
-var comments = new Comments({
-  name: 'website'
-});
+var comments = new Comments();
 
 function log(err, comment) {
   if (err) console.error(err);
