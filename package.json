@@ -11,14 +11,20 @@
   "bugs": {
     "url": "https://github.com/pvorb/node-comments/issues"
   },
-  "main": "comments.js",
+  "main": "./comments.js",
   "engines": {
     "node": ">=0.4.0"
   },
   "dependencies": {
     "MD5": ">=0.0.0",
     "append": ">=0.1.1",
-    "mongodb": ">=0.9.9"
+    "mongodb": ">=0.9.9",
     "sha1": ">=0.0.1"
-  }
+  },
+  "licenses": [
+    {
+      "type": "MIT license",
+      "url": "http://vorb.de/license/mit.html"
+    }
+  ]
 }
