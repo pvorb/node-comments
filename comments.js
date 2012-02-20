@@ -203,34 +203,6 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
   });
 };
 
-// method: getCommentsXML
-Comments.prototype.getCommentsXML = function getCommentsXML(limit, template,
-    properties, resp, received) {
-
-  this.getCollection(function (err, col) {
-    if (err) {
-      resp.writeHead(404);
-      resp.end();
-      return received(err);
-    }
-
-    col.find({}, { sort: [['modified', 'asc']], limit: limit })
-        .toArray(function (err, comments) {
-      if (err) {
-        resp.writeHead(404);
-        resp.end();
-        return received(err);
-      }
-
-      var p = append({ __comments: comments }, properties);
-
-      resp.writeHead(200, { 'Content-Type': 'text/xml' });
-      resp.end(ejs.render(template, { locals: p });
-      return received();
-    });
-  }
-};
-
 // method: parseCommentPOST
 Comments.prototype.parseCommentPOST = function parseCommentPOST(res, req,
     parsed) {
