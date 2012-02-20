@@ -1,11 +1,9 @@
-var append = require('append'),
-    sha1 = require('sha1'),
-    md5 = require('MD5'),
-    querystring = require('querystring'),
-    MongoDB = require('mongodb').Db,
-    MongoServer = require('mongodb').Server;
-
-var INDEX = 'res'; // which field to index
+var append = require('append');
+var sha1 = require('sha1');
+var md5 = require('MD5');
+var querystring = require('querystring');
+var MongoDB = require('mongodb').Db;
+var MongoServer = require('mongodb').Server;
 
 // constructor
 var Comments = module.exports = function Comments(opt) {
@@ -15,7 +13,8 @@ var Comments = module.exports = function Comments(opt) {
     host: 'localhost',
     port: 27017,
     name: 'website',
-    collection: 'comments'
+    collection: 'comments',
+    properties: {}
   };
 
   this.opt = append(defaultOpt, opt);
@@ -38,7 +37,7 @@ Comments.prototype.connect = function connect(connected) {
     // DB connection
     inst.db = db;
 
-    db.collection(opt.collection, function(err, col) {
+    db.collection(opt.collection, function (err, col) {
       if (err)
         return connected(err);
 
@@ -46,12 +45,13 @@ Comments.prototype.connect = function connect(connected) {
       inst.collection = col;
 
       // ensure index
-      col.ensureIndex(INDEX, function(err, index) {
+      col.ensureIndex('res', function (err) {
         if (err)
           return connected(err);
-
-        // callback
-        connected(null, col);
+        col.ensureIndex('modified', function (err) {
+          // callback
+          connected(null, col);
+        });
       });
     });
   });
@@ -84,7 +84,7 @@ Comments.prototype.saveComment = function saveComment(res, comment, saved) {
   // modified
   comment.modified = new Date();
 
-  // hash the comment
+  // hash the comment, necessary for future comment editing
   comment.hash = sha1(JSON.stringify(comment));
 
   // get collection and save comment
@@ -96,6 +96,7 @@ Comments.prototype.saveComment = function saveComment(res, comment, saved) {
 // method: getComments
 Comments.prototype.getComments = function getComments(res, props, opt,
     received) {
+
   var defaultOpt = {
     sort: 'modified'
   };
@@ -103,7 +104,6 @@ Comments.prototype.getComments = function getComments(res, props, opt,
   var defaultProps = {
     _id: true,
     author: true,
-    'email.hash': true,
     website: true,
     modified: true,
     message: true
@@ -157,45 +157,76 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
   if (typeof res == 'undefined') {
     resp.writeHead(404);
     resp.end();
-  } else {
-    // request comments for this resource from the db
-    this.getComments(res, function receiveComments(err, results) {
+    return received(new Error('No resource given'));
+  }
+
+  // request comments for this resource from the db
+  this.getComments(res, function receiveComments(err, results) {
+    if (err) {
+      resp.writeHead(404);
+      resp.end();
+      return received(err);
+    }
+
+    // count the comments
+    results.count(function count(err, count) {
+      var i = 0;
+
       if (err) {
         resp.writeHead(404);
         resp.end();
-        received(err);
-      } else {
-        // count the comments
-        results.count(function count(err, count) {
-          var i = 0;
-
-          if (err) {
-            resp.writeHead(404);
-            resp.end();
-            received(err);
-          } else {
-            resp.writeHead(200, { 'Content-Type': 'application/json' });
-
-            // start JSON array output
-            resp.write('[');
-
-            // for each comment in the result set
-            results.each(function (err, comment) {
-              if (err) received(err);
-
-              if (comment) {
-                resp.write(JSON.stringify(comment));
-                // seperate comments by a comma
-                if (++i < count) resp.write(',');
-              } else {
-                // end the output when there are no more comments
-                resp.end(']');
-                received();
-              }
-            });
-          }
-        });
+        return received(err);
       }
+
+      resp.writeHead(200, { 'Content-Type': 'application/json' });
+
+      // start JSON array output
+      resp.write('[');
+
+      // for each comment in the result set
+      results.each(function (err, comment) {
+        if (err)
+          return received(err);
+
+        if (!comment) {
+          // end the output when there are no more comments
+          resp.end(']');
+          return received();
+        }
+
+        resp.write(JSON.stringify(comment));
+        // seperate comments by a comma
+        if (++i < count)
+          resp.write(',');
+      });
+    });
+  });
+};
+
+// method: getCommentsXML
+Comments.prototype.getCommentsXML = function getCommentsXML(limit, template,
+    properties, resp, received) {
+
+  this.getCollection(function (err, col) {
+    if (err) {
+      resp.writeHead(404);
+      resp.end();
+      return received(err);
+    }
+
+    col.find({}, { sort: [['modified', 'asc']], limit: limit })
+        .toArray(function (err, comments) {
+      if (err) {
+        resp.writeHead(404);
+        resp.end();
+        return received(err);
+      }
+
+      var p = append({ __comments: comments }, properties);
+
+      resp.writeHead(200, { 'Content-Type': 'text/xml' });
+      resp.end(ejs.render(template, { locals: p });
+      return received();
     });
   }
 };
@@ -227,25 +258,26 @@ Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
   if (typeof res == 'undefined') {
     resp.writeHead(404);
     resp.end();
-    saved(new Error('Invalid argument. `res` must not be undefined.'));
-  } else {
-    if (comment === false) {
-      resp.writeHead(412); // precondition failed
-      resp.end();
-      saved(new Error('Precondition failed.'));
-    } else {
-      // save comment
-      this.saveComment(res, comment, function(err, comment) {
-        if (err) {
-          resp.writeHead(500);
-          resp.end();
-          saved(err);
-        } else { // everything ok
-          resp.writeHead(200);
-          resp.end();
-          saved();
-        }
-      });
-    }
+    return saved(new Error('Invalid argument. `res` must not be undefined.'));
   }
+
+  if (comment === false) {
+    resp.writeHead(412); // precondition failed
+    resp.end();
+    return saved(new Error('Precondition failed.'));
+  }
+
+  // save comment
+  this.saveComment(res, comment, function(err, comment) {
+    if (err) {
+      resp.writeHead(500);
+      resp.end();
+      return saved(err);
+    }
+
+    // everything ok
+    resp.writeHead(200);
+    resp.end();
+    saved();
+  });
 };
