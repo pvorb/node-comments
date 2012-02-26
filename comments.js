@@ -22,27 +22,27 @@ var Comments = module.exports = function Comments(opt) {
 
 // method: connect
 Comments.prototype.connect = function connect(connected) {
-  var inst = this,
+  var self = this,
       opt = this.opt;
 
   // Server connection
-  inst.server = new MongoServer(opt.host, opt.port, { auto_reconnect: true });
+  self.server = new MongoServer(opt.host, opt.port, { auto_reconnect: true });
   // DB connection
-  var dbConnector = new MongoDB(opt.name, inst.server);
+  var dbConnector = new MongoDB(opt.name, self.server);
 
   dbConnector.open(function(err, db) {
     if (err)
       return connected(err);
 
     // DB connection
-    inst.db = db;
+    self.db = db;
 
     db.collection(opt.collection, function (err, col) {
       if (err)
         return connected(err);
 
       // ref to collection
-      inst.collection = col;
+      self.collection = col;
 
       // ensure index
       col.ensureIndex('res', function (err) {
@@ -89,6 +89,9 @@ Comments.prototype.saveComment = function saveComment(res, comment, saved) {
 
   // get collection and save comment
   this.getCollection(function(err, col) {
+    if (err)
+      return saved(err);
+
     col.save(comment, saved);
   });
 };
@@ -96,7 +99,6 @@ Comments.prototype.saveComment = function saveComment(res, comment, saved) {
 // method: getComments
 Comments.prototype.getComments = function getComments(res, props, opt,
     received) {
-
   var defaultOpt = {
     sort: 'modified'
   };
@@ -129,6 +131,9 @@ Comments.prototype.getComments = function getComments(res, props, opt,
 
   // get collection and find comments
   this.getCollection(function(err, col) {
+    if (err)
+      return received(err);
+
     col.find(query, props, opt, received);
   });
 };
@@ -147,7 +152,9 @@ Comments.prototype.count = function count(res, counted) {
 // method: close
 Comments.prototype.close = function(done) {
   if (this.db)
-    this.db.close(done);
+    return this.db.close(done);
+
+  done();
 };
 
 // method: getCommentsJSON
@@ -157,12 +164,13 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
   if (typeof res == 'undefined') {
     resp.writeHead(404);
     resp.end();
-    return received(new Error('No resource given'));
+    return received(new Error('No resource given.'));
   }
 
   // request comments for this resource from the db
   this.getComments(res, function receiveComments(err, results) {
     if (err) {
+      throw err;
       resp.writeHead(404);
       resp.end();
       return received(err);
@@ -173,6 +181,7 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
       var i = 0;
 
       if (err) {
+        throw err;
         resp.writeHead(404);
         resp.end();
         return received(err);
@@ -186,7 +195,8 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
       // for each comment in the result set
       results.each(function (err, comment) {
         if (err)
-          return received(err);
+          throw err;
+//        return received(err);
 
         if (!comment) {
           // end the output when there are no more comments
