@@ -133,10 +133,7 @@ Comments.prototype.getComments = function getComments(res, props, opt,
   var defaultProps = {
     _id: true,
     author: true,
-    email: {
-      address: false,
-      hash: true
-    },
+    'email.hash': true,
     website: true,
     modified: true,
     message: true,
