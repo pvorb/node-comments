@@ -2,8 +2,12 @@
   "author": "Paul Vorbach <paul@vorb.de> (https://vorb.de)",
   "name": "Comments",
   "description": "utilities for building a comment server for your website",
-  "tags": [ "comment", "discussion", "blog" ],
-  "version": "0.3.0",
+  "tags": [
+    "comment",
+    "discussion",
+    "blog"
+  ],
+  "version": "0.4.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/pvorb/node-comments.git"
@@ -28,5 +32,7 @@
       "type": "MIT license",
       "url": "http://vorb.de/license/mit.html"
     }
-  ]
+  ],
+  "devDependencies": {},
+  "optionalDependencies": {}
 }
