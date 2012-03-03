@@ -1,9 +1,13 @@
 var append = require('append');
+var fs = require('fs');
+var path = require('path');
 var sha1 = require('sha1');
 var md5 = require('MD5');
 var querystring = require('querystring');
+var async = require('async');
 var MongoDB = require('mongodb').Db;
 var MongoServer = require('mongodb').Server;
+var Pingback = require('pingback');
 
 // constructor
 var Comments = module.exports = function Comments(opt) {
@@ -13,8 +17,10 @@ var Comments = module.exports = function Comments(opt) {
     host: 'localhost',
     port: 27017,
     name: 'website',
-    collection: 'comments',
-    properties: {}
+    comments: 'comments',
+    pingbacks: 'pingbacks',
+    publicDirectory: process.cwd(),
+    urlPrefix: 'http://example.com/'
   };
 
   this.opt = append(defaultOpt, opt);
@@ -37,36 +43,55 @@ Comments.prototype.connect = function connect(connected) {
     // DB connection
     self.db = db;
 
-    db.collection(opt.collection, function (err, col) {
-      if (err)
-        return connected(err);
+    // open collections and ensure indexes
+    async.parallel({
+      comments: function (cb) {
+        db.collection(opt.comments, function (err, col) {
+          if (err)
+            return cb(err);
 
-      // ref to collection
-      self.collection = col;
+          self.comments = col;
 
-      // ensure index
-      col.ensureIndex('res', function (err) {
-        if (err)
-          return connected(err);
-        col.ensureIndex('modified', function (err) {
-          // callback
-          connected(null, col);
+          async.parallel([
+            function (ensured) {
+              col.ensureIndex('res', ensured);
+            },
+            function (ensured) {
+              col.ensureIndex('modified', ensured);
+            }
+          ], function (err) {
+            if (err)
+              return cb(err);
+
+            cb(null, col);
+          });
         });
-      });
-    });
+      },
+      pingbacks: function (cb) {
+        db.collection(opt.pingbacks, function (err, col) {
+          if (err)
+            return cb(err);
+
+          self.pingbacks = col;
+
+          cb(null, col);
+        });
+      }
+    }, connected);
   });
 };
 
 // method: getCollection
-Comments.prototype.getCollection = function getCollection(done) {
+Comments.prototype.getCollections = function getCollection(done) {
   // If connection hasn't already been established
-  if (typeof this.collection == 'undefined')
+  if (typeof this.comments == 'undefined'
+      || typeof this.pingbacks == 'undefined')
     // try to connect
     this.connect(done);
 
   // otherwise simply use existing collection
   else
-    done(null, this.collection);
+    done(null, this.comments, this.pingbacks);
 };
 
 // method: saveComment
@@ -75,11 +100,13 @@ Comments.prototype.saveComment = function saveComment(res, comment, saved) {
   comment.res = res;
 
   // email address and hash
-  var email = comment.email;
-  comment.email = {
-    address: email,
-    hash: md5(email)
-  };
+  if (comment.email) {
+    var email = comment.email;
+    comment.email = {
+      address: email,
+      hash: md5(email)
+    };
+  }
 
   // modified
   comment.modified = new Date();
@@ -88,11 +115,11 @@ Comments.prototype.saveComment = function saveComment(res, comment, saved) {
   comment.hash = sha1(JSON.stringify(comment));
 
   // get collection and save comment
-  this.getCollection(function(err, col) {
+  this.getCollections(function(err, col) {
     if (err)
       return saved(err);
 
-    col.save(comment, saved);
+    col.comments.save(comment, { safe: true }, saved);
   });
 };
 
@@ -106,9 +133,14 @@ Comments.prototype.getComments = function getComments(res, props, opt,
   var defaultProps = {
     _id: true,
     author: true,
+    email: {
+      address: false,
+      hash: true
+    },
     website: true,
     modified: true,
-    message: true
+    message: true,
+    regular: true
   };
 
   // set properties and options
@@ -130,11 +162,11 @@ Comments.prototype.getComments = function getComments(res, props, opt,
     query.res = res;
 
   // get collection and find comments
-  this.getCollection(function(err, col) {
+  this.getCollections(function(err, col) {
     if (err)
       return received(err);
 
-    col.find(query, props, opt, received);
+    col.comments.find(query, props, opt, received);
   });
 };
 
@@ -150,7 +182,7 @@ Comments.prototype.count = function count(res, counted) {
 };
 
 // method: close
-Comments.prototype.close = function(done) {
+Comments.prototype.close = function close(done) {
   if (this.db)
     return this.db.close(done);
 
@@ -195,8 +227,7 @@ Comments.prototype.getCommentsJSON = function getCommentsJSON(res, resp,
       // for each comment in the result set
       results.each(function (err, comment) {
         if (err)
-          throw err;
-//        return received(err);
+          return;
 
         if (!comment) {
           // end the output when there are no more comments
@@ -249,6 +280,8 @@ Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
     return saved(new Error('Precondition failed.'));
   }
 
+  comment.regular = true;
+
   // save comment
   this.saveComment(res, comment, function(err, comment) {
     if (err) {
@@ -262,4 +295,74 @@ Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
     resp.end();
     saved();
   });
+};
+
+// method: sendPingbacks
+Comments.prototype.sendPingbacks = function sendPingbacks(res, pinged) {
+  var self = this;
+
+  this.getCollections(function (err, col) {
+    if (err)
+      return pinged(err);
+
+    // check if document already has sent pingbacks
+    col.pingbacks.find({ _id: res, sent: true }).count(function (err, num) {
+      if (err)
+        return pinged(err);
+
+      // if not, send pingbacks
+      if (num == 0)
+        fs.readFile(path.resolve(self.opt.publicDirectory, res), 'utf8',
+            function (err, html) {
+          if (err)
+            return pinged(err);
+
+          Pingback.scan(html, self.opt.urlPrefix+res, function (err, pb) {
+            if (err)
+              return;
+
+            // set sent to true for this document and push pb.href to targets
+            col.pingbacks.update({ _id: res }, {
+              $set: { sent: true },
+              $push: { targets: pb.href }
+            }, { safe: true, upsert: true }, function (err) {
+              if (err)
+                return pinged(err);
+              pinged(pb);
+            });
+          });
+        });
+    });
+  });
+};
+
+// method: handlePingback
+Comments.prototype.handlePingback
+    = function handlePingback(req, resp, callback) {
+  var self = this;
+
+  Pingback.middleware(function (source, target) {
+    var ping = this;
+
+    // if target.pathname starts with slash, remove it
+    if (target.pathname[0] == '/')
+      target.pathname = target.pathname.substr(1);
+
+    fs.stat(path.resolve(self.opt.publicDirectory, target.pathname),
+        function (err, stats) {
+      if (err || !stats.isFile())
+        return;
+
+      // save the pingback as a comment
+      self.saveComment(target.pathname, {
+        message: ping.excerpt,
+        website: source.href
+      }, function (err) {
+        if (err)
+          console.log('Failed to add pingback from '+source.href);
+        else
+          console.log('Added pingback from '+source.href);
+      });
+    });
+  })(req, resp, callback);
 };
