@@ -307,28 +307,37 @@ Comments.prototype.sendPingbacks = function sendPingbacks(res, pinged) {
       if (err)
         return pinged(err);
 
+      if (num != 0)
+        return pinged(new Error('Already sent pingbacks for '+res+'.'));
+
       // if not, send pingbacks
-      if (num == 0)
-        fs.readFile(path.resolve(self.opt.publicDirectory, res), 'utf8',
-            function (err, html) {
-          if (err)
-            return pinged(err);
+      fs.readFile(path.resolve(self.opt.publicDirectory, res), 'utf8',
+          function (err, html) {
+        if (err)
+          return pinged(err);
 
-          Pingback.scan(html, self.opt.urlPrefix+res, function (err, pb) {
-            if (err)
-              return;
-
-            // set sent to true for this document and push .href to targets
-            col.pingbacks.update({ _id: res }, {
-              $set: { sent: true },
-              $push: { targets: pb.href }
-            }, { safe: true, upsert: true }, function (err) {
-              if (err)
-                return pinged(err);
-              pinged(pb);
+        Pingback.scan(html, self.opt.urlPrefix+res, function (err, pb) {
+          if (err) {
+            return col.pingbacks.update({ _id: res }, {
+              $set: { sent: true }
+            }, { safe: true, upsert: true }, function (e) {
+              if (e)
+                return pinged(e);
+              pinged(err);
             });
+          }
+
+          // set sent to true for this document and push .href to targets
+          col.pingbacks.update({ _id: res }, {
+            $set: { sent: true },
+            $push: { targets: pb.href }
+          }, { safe: true, upsert: true }, function (err) {
+            if (err)
+              return pinged(err);
+            pinged(null, pb);
           });
         });
+      });
     });
   });
 };
