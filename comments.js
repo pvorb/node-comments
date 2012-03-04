@@ -137,7 +137,7 @@ Comments.prototype.getComments = function getComments(res, props, opt,
     website: true,
     modified: true,
     message: true,
-    regular: true
+    pingback: true
   };
 
   // set properties and options
