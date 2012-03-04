@@ -32,7 +32,7 @@ Comments.prototype.connect = function connect(connected) {
       opt = this.opt;
 
   // Server connection
-  self.server = new MongoServer(opt.host, opt.port, { auto_reconnect: true });
+  self.server = new MongoServer(opt.host, opt.port);
   // DB connection
   var dbConnector = new MongoDB(opt.name, self.server);
 
@@ -81,8 +81,8 @@ Comments.prototype.connect = function connect(connected) {
   });
 };
 
-// method: getCollection
-Comments.prototype.getCollections = function getCollection(done) {
+// method: getCollections
+Comments.prototype.getCollections = function getCollections(done) {
   // If connection hasn't already been established
   if (typeof this.comments == 'undefined'
       || typeof this.pingbacks == 'undefined')
@@ -91,7 +91,7 @@ Comments.prototype.getCollections = function getCollection(done) {
 
   // otherwise simply use existing collection
   else
-    done(null, this.comments, this.pingbacks);
+    done(null, { comments: this.comments, pingbacks: this.pingbacks });
 };
 
 // method: saveComment
@@ -318,7 +318,7 @@ Comments.prototype.sendPingbacks = function sendPingbacks(res, pinged) {
             if (err)
               return;
 
-            // set sent to true for this document and push pb.href to targets
+            // set sent to true for this document and push .href to targets
             col.pingbacks.update({ _id: res }, {
               $set: { sent: true },
               $push: { targets: pb.href }
@@ -335,31 +335,67 @@ Comments.prototype.sendPingbacks = function sendPingbacks(res, pinged) {
 
 // method: handlePingback
 Comments.prototype.handlePingback
-    = function handlePingback(req, resp, callback) {
+    = function handlePingback(req, resp, next) {
   var self = this;
 
-  Pingback.middleware(function (source, target) {
-    var ping = this;
-
+  var ping = new Pingback(req, resp);
+  ping.on('ping', function (source, target, next) {
     // if target.pathname starts with slash, remove it
     if (target.pathname[0] == '/')
       target.pathname = target.pathname.substr(1);
 
+    // check if it’s a file
     fs.stat(path.resolve(self.opt.publicDirectory, target.pathname),
         function (err, stats) {
-      if (err || !stats.isFile())
-        return;
+      if (err)
+        return next(Pingback.TARGET_DOES_NOT_EXIST);
+      if (!stats.isFile())
+        return next(Pingback.TARGET_CANNOT_BE_USED);
 
-      // save the pingback as a comment
-      self.saveComment(target.pathname, {
-        message: ping.excerpt,
-        website: source.href
-      }, function (err) {
+      self.getCollections(function (err, col) {
         if (err)
-          console.log('Failed to add pingback from '+source.href);
-        else
-          console.log('Added pingback from '+source.href);
+          return next(Pingback.TARGET_CANNOT_BE_USED);
+
+        // check if the pingback already has been registered
+        col.comments.find({
+          res: target.pathname,
+          pingback: true,
+          website: source.href
+        }).count(function (err, count) {
+          if (err)
+            return next(Pingback.TARGET_CANNOT_BE_USED);
+          if (count)
+            return next(Pingback.ALREADY_REGISTERED);
+
+          next();
+        });
       });
     });
-  })(req, resp, callback);
+  });
+  ping.on('fault', function (code, msg) {
+    next(new Error(
+      'Received bad pingback from '
+      + this.source.href + '.'
+      + ' Fault Code: ' + code
+      + ' - Message: ' + msg
+    ));
+  });
+  ping.on('error', function () {
+    resp.writeHead(404);
+    resp.end();
+  });
+  ping.on('success', function (source, target) {
+    // save the pingback as a comment
+    self.saveComment(target.pathname, {
+      message: '[…] '+ping.excerpt+' […]',
+      author: source.title,
+      website: source.href,
+      pingback: true
+    }, function (err) {
+      if (err)
+        return next(new Error('Failed to add pingback from '
+            +source.href+'.'));
+    });
+  });
+  req.pipe(ping);
 };
