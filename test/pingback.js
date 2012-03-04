@@ -44,5 +44,9 @@ source.listen(1337, function () {
       console.log('Sent pingbacks');
     });
 
+    c2.sendPingbacks('world.html', function () {
+      console.log('Sent pingbacks');
+    });
+
   });
 });
