@@ -40,11 +40,11 @@ source.listen(1337, function () {
   target.listen(1338, function () {
 
     // test
-    c1.sendPingbacks('hello.html', function () {
+    c1.sendPingbacks('/hello.html', function () {
       console.log('Sent pingbacks');
     });
 
-    c2.sendPingbacks('world.html', function () {
+    c2.sendPingbacks('/world.html', function () {
       console.log('Sent pingbacks');
     });
 

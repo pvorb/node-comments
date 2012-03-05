@@ -1,6 +1,7 @@
 var append = require('append');
 var fs = require('fs');
 var path = require('path');
+var url = require('url');
 var sha1 = require('sha1');
 var md5 = require('MD5');
 var querystring = require('querystring');
@@ -308,15 +309,16 @@ Comments.prototype.sendPingbacks = function sendPingbacks(res, pinged) {
         return pinged(err);
 
       if (num != 0)
-        return pinged(new Error('Already sent pingbacks for '+res+'.'));
+        return pinged(new Error('Already sent pingbacks for "'+res+'".'));
 
       // if not, send pingbacks
-      fs.readFile(path.resolve(self.opt.publicDirectory, res), 'utf8',
+      fs.readFile(path.resolve(self.opt.publicDirectory, './'+res), 'utf8',
           function (err, html) {
         if (err)
           return pinged(err);
 
-        Pingback.scan(html, self.opt.urlPrefix+res, function (err, pb) {
+        Pingback.scan(html, url.resolve(self.opt.urlPrefix, res),
+            function (err, pb) {
           if (err) {
             return col.pingbacks.update({ _id: res }, {
               $set: { sent: true }
@@ -349,12 +351,8 @@ Comments.prototype.handlePingback
 
   var ping = new Pingback(req, resp);
   ping.on('ping', function (source, target, next) {
-    // if target.pathname starts with slash, remove it
-    if (target.pathname[0] == '/')
-      target.pathname = target.pathname.substr(1);
-
     // check if it’s a file
-    fs.stat(path.resolve(self.opt.publicDirectory, target.pathname),
+    fs.stat(path.resolve(self.opt.publicDirectory, '.'+target.pathname),
         function (err, stats) {
       if (err)
         return next(Pingback.TARGET_DOES_NOT_EXIST);
