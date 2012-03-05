@@ -7,7 +7,7 @@
     "discussion",
     "blog"
   ],
-  "version": "0.4.4",
+  "version": "0.4.5",
   "repository": {
     "type": "git",
     "url": "git://github.com/pvorb/node-comments.git"
