@@ -53,14 +53,10 @@ Comments.prototype.connect = function connect(connected) {
 
           self.comments = col;
 
-          async.parallel([
-            function (ensured) {
-              col.ensureIndex('res', ensured);
-            },
-            function (ensured) {
-              col.ensureIndex('modified', ensured);
-            }
-          ], function (err) {
+          col.ensureIndex({
+            res: -1,
+            modified: -1
+          }, function (err) {
             if (err)
               return cb(err);
 
@@ -111,9 +107,6 @@ Comments.prototype.saveComment = function saveComment(res, comment, saved) {
 
   // modified
   comment.modified = new Date();
-
-  // hash the comment, necessary for future comment editing
-  comment.hash = sha1(JSON.stringify(comment));
 
   // get collection and save comment
   this.getCollections(function(err, col) {
@@ -277,8 +270,6 @@ Comments.prototype.setCommentJSON = function setCommentJSON(res, comment,
     resp.end();
     return saved(new Error('Precondition failed.'));
   }
-
-  comment.regular = true;
 
   // save comment
   this.saveComment(res, comment, function(err, comment) {
