@@ -2,7 +2,6 @@ var append = require('append');
 var fs = require('fs');
 var path = require('path');
 var url = require('url');
-var sha1 = require('sha1');
 var md5 = require('MD5');
 var querystring = require('querystring');
 var async = require('async');

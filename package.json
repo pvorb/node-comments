@@ -24,8 +24,7 @@
     "append": ">=0.1.1",
     "async": ">=0.1.18",
     "mongodb": ">=0.9.9",
-    "pingback": ">=0.0.2",
-    "sha1": ">=0.0.1"
+    "pingback": ">=0.0.2"
   },
   "licenses": [
     {
