@@ -385,7 +385,7 @@ Comments.prototype.handlePingback
     // save the pingback as a comment
     self.saveComment(target.pathname, {
       message: '[…] '+ping.excerpt+' […]',
-      author: source.title,
+      author: ping.title,
       website: source.href,
       pingback: true
     }, function (err) {
