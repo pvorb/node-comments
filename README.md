@@ -165,15 +165,16 @@ HTTP status code to the given `ServerResponse` object.
 
 ## Installation
 
-You need a running MongoDB before you can use **Comments**. On Debian
+You need a running [MongoDB](http://www.mongodb.org/downloads) before you can
+use **Comments**. On Debian
 
-```bash
+``` bash
 apt-get install mongodb
 ```
 
 Then install **Comments** with npm.
 
-```bash
+``` bash
 npm install -g Comments
 ```
 
