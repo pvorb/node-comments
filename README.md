@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/pvorb/node-comments.png)](http://travis-ci.org/pvorb/node-comments)
 # Comments
 
 An abstraction layer for MongoDB that provides some commenting functionality.
